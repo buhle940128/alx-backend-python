@@ -23,7 +23,5 @@ class Database:
         print(f"[DEBUG] Using connection: {connection}")
         print(f"[EXECUTE] Query '{query}' on database '{self.name}'.")
 
-# Example usage:
-db = Database("CustomerDB")
-db.execute_query("SELECT * FROM customers")
+
 
