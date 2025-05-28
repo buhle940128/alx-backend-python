@@ -25,3 +25,41 @@ def retry_on_failure(retries=3, delay=2):
                         raise last_exception
         return wrapper
     return decorator
+   @retry_on_failure(retries=3, delay=1)
+def insert_user_unstable(conn, name):
+    if random.random() < 0.5:  # Simulate a 50% chance of failure
+        raise sqlite3.OperationalError("Simulated transient database error.")
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO users (name) VALUES (?)', (name,))
+    conn.commit()
+    print(f"User '{name}' inserted successfully.")
+
+# Setup database
+def setup_database():
+    conn = sqlite3.connect('example.db')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Usage
+if __name__ == '__main__':
+    setup_database()
+    conn = sqlite3.connect('example.db')
+
+    try:
+        insert_user_unstable(conn, 'Alice')
+    except Exception as e:
+        print(f"Operation failed after retries: {e}")
+    finally:
+        conn.close()
+
+    # Verify result
+    conn = sqlite3.connect('example.db')
+    users = conn.execute('SELECT * FROM users').fetchall()
+    print("Users in database:", users)
+    conn.close() 
