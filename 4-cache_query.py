@@ -8,3 +8,5 @@ def fetch_users_with_cache(conn, query):
 users = fetch_users_with_cache(query="SELECT * FROM users")
 Second call will use the cached result
 users_again = fetch_users_with_cache(query="SELECT * FROM users")
+third call will use the cached result
+users_again = fetch_users_with_cache(query="SELECT * FROM products")
