@@ -1,16 +1,8 @@
-query_cache = {}
-
-def cache_query(func):
-    """
-    Decorator to cache the result of SQL queries based on the query string.
-    """
-    def wrapper(query, *args, **kwargs):
-        if query in query_cache:
-            print("Cache hit for query:", query)
-            return query_cache[query]
-        else:
-            print("Cache miss for query:", query)
-            result = func(query, *args, **kwargs)
-            query_cache[query] = result
-            return result
-    return wrapper
+@with_db_connection
+@cache_query
+def fetch_users_with_cache(conn, query):
+    cursor = conn.cursor()
+    cursor.execute(query)
+    return cursor.fetchall()
+ First call will cache the result
+users = fetch_users_with_cache(query="SELECT * FROM users")
