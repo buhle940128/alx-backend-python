@@ -1,1 +1,38 @@
+from django.contrib.auth.models import AbstractUser
+from django.db import models
 
+class CustomUser(AbstractUser):
+    # Add extra fields as needed. For example:
+    bio = models.TextField(blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
+
+    def __str__(self):
+        return self.username
+In messaging_app/settings.py, set the custom user model:
+AUTH_USER_MODEL = 'chats.CustomUser'
+A conversation can involve multiple users (Many-to-Many):
+class Conversation(models.Model):
+    participants = models.ManyToManyField('CustomUser', related_name='conversations')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Conversation {self.id}"
+     Each message belongs to a conversation and has one sender (a user):
+class Message(models.Model):
+    sender = models.ForeignKey('CustomUser', on_delete=models.CASCADE, related_name='messages')
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Message from {self.sender.username} at {self.timestamp}"
+      python manage.py makemigrations
+python manage.py migrate
+from django.contrib import admin
+from .models import CustomUser, Conversation, Message
+from django.contrib.auth.admin import UserAdmin
+
+admin.site.register(CustomUser, UserAdmin)
+admin.site.register(Conversation)
+admin.site.register(Message)
