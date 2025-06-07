@@ -1,1 +1,2 @@
-
+django-admin startproject messaging_app
+cd messaging_app
