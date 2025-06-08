@@ -64,3 +64,26 @@ utils.get_json is a function that takes a URL and returns a JSON response (parse
 It uses requests.get(url).json() under the hood.
 
 We’ll use unittest.mock to patch requests.get so the test doesn’t make real HTTP calls.
+import unittest
+from unittest.mock import patch, Mock
+from parameterized import parameterized
+from utils import get_json
+
+class TestGetJson(unittest.TestCase):
+    @parameterized.expand([
+        ("http://example.com", {"payload": True}),
+        ("http://holberton.io", {"payload": False}),
+    ])
+    @patch("utils.requests.get")
+    def test_get_json(self, test_url, test_payload, mock_get):
+        # Set up mock to return a response with .json() method
+        mock_response = Mock()
+        mock_response.json.return_value = test_payload
+        mock_get.return_value = mock_response
+
+        result = get_json(test_url)
+        self.assertEqual(result, test_payload)
+        mock_get.assert_called_once_with(test_url)
+
+if __name__ == "__main__":
+    unittest.main()
