@@ -184,3 +184,26 @@ class OffensiveLanguageMiddleware:
         if x_forwarded_for:
             return x_forwarded_for.split(',')[0]
         return request.META.get('REMOTE_ADDR')
+from django.http import HttpResponseForbidden
+
+class RolepermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Define protected paths — apply restrictions only to these
+        protected_paths = ['/admin-action/', '/moderate/', '/secure-area/']
+
+        # Check if request path requires role permission
+        if any(request.path.startswith(path) for path in protected_paths):
+            user = request.user
+
+            # User must be authenticated and have required role
+            if not user.is_authenticated:
+                return HttpResponseForbidden("You must be logged in to access this resource.")
+
+            # Assuming user model has a `role` attribute
+            if not hasattr(user, 'role') or user.role not in ['admin', 'moderator']:
+                return HttpResponseForbidden("You do not have the required role to access this resource.")
+
+        return self.get_response(request)
