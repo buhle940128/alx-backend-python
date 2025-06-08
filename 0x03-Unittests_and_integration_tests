@@ -59,3 +59,8 @@ class TestAccessNestedMap(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+utils.get_json is a function that takes a URL and returns a JSON response (parsed into a Python dictionary).
+
+It uses requests.get(url).json() under the hood.
+
+We’ll use unittest.mock to patch requests.get so the test doesn’t make real HTTP calls.
