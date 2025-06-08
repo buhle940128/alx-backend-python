@@ -1,1 +1,45 @@
+#!/usr/bin/env python3
+def access_nested_map(nested_map, path):
+    """Access a nested map with a sequence of keys."""
+    for key in path:
+        nested_map = nested_map[key]
+    return nested_map
+import unittest
+from utils import access_nested_map
+class TestAccessNestedMap(unittest.TestCase):
+    def test_access_nested_map(self):
+        nested_map = {"a": {"b": {"c": 42}}}
+        path = ("a", "b", "c")
+        result = access_nested_map(nested_map, path)
+        self.assertEqual(result, 42)
+import unittest
+from utils import access_nested_map
+class TestAccessNestedMap(unittest.TestCase):
+    def test_access_nested_map(self):
+        # Test simple access
+        self.assertEqual(access_nested_map({"a": 1}, ("a",)), 1)
 
+        # Test nested access
+        self.assertEqual(access_nested_map({"a": {"b": 2}}, ("a",)), {"b": 2})
+        self.assertEqual(access_nested_map({"a": {"b": 2}}, ("a", "b")), 2)
+
+        # Test deeper nesting
+        self.assertEqual(access_nested_map({"x": {"y": {"z": 99}}}, ("x", "y", "z")), 99)
+
+if __name__ == '__main__':
+    unittest.main()
+import unittest
+from parameterized import parameterized
+from utils import access_nested_map
+
+class TestAccessNestedMap(unittest.TestCase):
+    @parameterized.expand([
+        ({"a": 1}, ("a",), 1),
+        ({"a": {"b": 2}}, ("a",), {"b": 2}),
+        ({"a": {"b": 2}}, ("a", "b"), 2),
+    ])
+    def test_access_nested_map(self, nested_map, path, expected):
+        self.assertEqual(access_nested_map(nested_map, path), expected)
+
+if __name__ == '__main__':
+    unittest.main()
