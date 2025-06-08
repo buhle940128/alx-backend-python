@@ -144,3 +144,43 @@ class RestrictAccessByTimeMiddleware:
                 return HttpResponseForbidden("Access to chat is only allowed between 6 PM and 9 PM.")
 
         return self.get_response(request)
+import time
+from django.http import HttpResponseForbidden
+from collections import defaultdict
+
+class OffensiveLanguageMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.message_log = defaultdict(list)  # {ip: [timestamp1, timestamp2, ...]}
+        self.message_limit = 5  # max messages per window
+        self.time_window = 60  # seconds
+
+    def __call__(self, request):
+        ip_address = self.get_client_ip(request)
+
+        # Apply only to POST requests to chat endpoints
+        if request.method == 'POST' and request.path.startswith('/chat/'):
+            current_time = time.time()
+            timestamps = self.message_log[ip_address]
+
+            # Filter out timestamps older than 1 minute
+            self.message_log[ip_address] = [
+                ts for ts in timestamps if current_time - ts <= self.time_window
+            ]
+
+            if len(self.message_log[ip_address]) >= self.message_limit:
+                return HttpResponseForbidden(
+                    "You have exceeded the maximum number of messages allowed per minute."
+                )
+
+            # Log current timestamp
+            self.message_log[ip_address].append(current_time)
+
+        return self.get_response(request)
+
+    def get_client_ip(self, request):
+        """Extract client IP address from headers"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0]
+        return request.META.get('REMOTE_ADDR')
