@@ -137,6 +137,17 @@ class TestGithubOrgClient(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+To implement the test_public_repos_url method for unit-testing GithubOrgClient._public_repos_url, we need to:
+
+Understand that _public_repos_url is a property (due to @memoize decorator).
+
+Use unittest.mock.patch to mock the org property (also a memoized method).
+
+Simulate a known return value for the org property.
+
+Assert that _public_repos_url returns the expected value based on the mock.
+
+Here’s how you can implement this test using unittest:
 import unittest
 from unittest.mock import patch, PropertyMock
 from client import GithubOrgClient
