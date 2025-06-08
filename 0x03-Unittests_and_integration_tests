@@ -207,3 +207,24 @@ class TestGithubOrgClient(unittest.TestCase):
             self.assertEqual(repos, expected_repos)
             mock_repos_url.assert_called_once()
             mock_get_json.assert_called_once_with("http://mocked_url.com/repos")
+To unit-test the GithubOrgClient.has_license method, we'll parameterize the test to run it with multiple sets of input values and expected results.
+
+You can use @parameterized.expand from the parameterized module to make this clean and readable.
+Make sure you have the parameterized library installed:
+pip install parameterized
+Then write the test like this
+import unittest
+from parameterized import parameterized
+from client import GithubOrgClient
+
+class TestGithubOrgClient(unittest.TestCase):
+    """Test case for GithubOrgClient"""
+
+    @parameterized.expand([
+        ({"license": {"key": "my_license"}}, "my_license", True),
+        ({"license": {"key": "other_license"}}, "my_license", False),
+    ])
+    def test_has_license(self, repo, license_key, expected):
+        """Test has_license returns expected boolean"""
+        result = GithubOrgClient.has_license(repo, license_key)
+        self.assertEqual(result, expected)
