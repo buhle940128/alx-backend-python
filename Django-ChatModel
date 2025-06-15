@@ -1,1 +1,44 @@
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
+    parent_message = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='replies')
+    read = models.BooleanField(default=False)  # New field to track read status
 
+    def __str__(self):
+        return f'Message from {self.sender} to {self.receiver}'
+from django.db import models
+
+class UnreadMessagesManager(models.Manager):
+    def for_user(self, user):
+        return self.get_queryset().filter(receiver=user, read=False)
+from .managers import UnreadMessagesManager
+
+class Message(models.Model):
+    # ... [previous fields]
+    read = models.BooleanField(default=False)
+
+    objects = models.Manager()  # Default manager
+    unread = UnreadMessagesManager()  # Custom manager for unread messages
+from .models import Message
+
+def unread_messages_view(request):
+    user = request.user
+    unread_messages = Message.unread.for_user(user).only('id', 'sender', 'content', 'timestamp')
+    
+    return render(request, 'inbox/unread.html', {
+        'unread_messages': unread_messages
+    })
+<h2>Unread Messages</h2>
+<ul>
+  {% for message in unread_messages %}
+    <li>
+      <strong>{{ message.sender }}:</strong> {{ message.content }}<br>
+      <small>{{ message.timestamp }}</small>
+    </li>
+  {% empty %}
+    <li>No unread messages.</li>
+  {% endfor %}
+</ul>
