@@ -1,1 +1,16 @@
+class ListingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Listing
+        fields = '_2_all_1_'
 
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = '_2_all_1_'
+router = DefaultRouter()
+router.register(r'listings', ListingViewSet)
+router.register(r'bookings', BookingViewSet)
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/', include('listings.urls')),  # Mount the API here
+]
