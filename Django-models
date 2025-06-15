@@ -1,1 +1,62 @@
+from django.db import models
+from django.contrib.auth.models import User
 
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
+    parent_message = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='replies'
+    )
+
+    def __str__(self):
+        return f'Message {self.id} from {self.sender} to {self.receiver}'
+
+    def is_root(self):
+        return self.parent_message is None
+from django.db.models import Prefetch
+from .models import Message
+
+def get_conversation(user):
+    # Root messages only
+    root_messages = Message.objects.filter(
+        receiver=user,
+        parent_message__isnull=True
+    ).select_related('sender', 'receiver').prefetch_related(
+        Prefetch('replies', queryset=Message.objects.select_related('sender', 'receiver'))
+    )
+    return root_messages
+def get_thread(message):
+    """
+    Recursively fetch a message and all its replies.
+    """
+    thread = {
+        'message': message,
+        'replies': []
+    }
+
+    replies = message.replies.select_related('sender', 'receiver').all()
+    for reply in replies:
+        thread['replies'].append(get_thread(reply))
+    
+    return thread
+{% for root in root_messages %}
+    <div class="message">
+        <p><strong>{{ root.sender }}:</strong> {{ root.content }}</p>
+        {% include 'partials/replies.html' with replies=root.replies.all %}
+    </div>
+{% endfor %}
+<ul class="replies">
+    {% for reply in replies %}
+        <li>
+            <p><strong>{{ reply.sender }}:</strong> {{ reply.content }}</p>
+            {% include 'partials/replies.html' with replies=reply.replies.all %}
+        </li>
+    {% endfor %}
+</ul>
