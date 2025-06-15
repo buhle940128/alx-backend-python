@@ -1,1 +1,55 @@
+from django.db import models
+from django.contrib.auth.models import User
 
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'Message from {self.sender} to {self.receiver}'
+
+class MessageHistory(models.Model):
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='history')
+    old_content = models.TextField()
+    edited_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'History of Message ID {self.message.id} at {self.edited_at}'
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from .models import Message, MessageHistory
+
+@receiver(pre_save, sender=Message)
+def log_message_edit(sender, instance, **kwargs):
+    if instance.pk:
+        try:
+            old_instance = Message.objects.get(pk=instance.pk)
+            if old_instance.content != instance.content:
+                # Save the old content to MessageHistory
+                MessageHistory.objects.create(
+                    message=instance,
+                    old_content=old_instance.content
+                )
+                instance.edited = True  # Mark message as edited
+        except Message.DoesNotExist:
+            pass  # Message is new, not an edit
+from django.apps import AppConfig
+from django.shortcuts import get_object_or_404, render
+from .models import Message
+
+def message_detail(request, message_id):
+    message = get_object_or_404(Message, id=message_id)
+    history = message.history.all().order_by('-edited_at')
+    return render(request, 'message_detail.html', {
+        'message': message,
+        'history': history
+    })
+
+class YourAppNameConfig(AppConfig):
+    name = 'your_app_name'
+
+    def ready(self):
+        import your_app_name.signals
